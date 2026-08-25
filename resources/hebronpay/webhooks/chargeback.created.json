@@ -1,0 +1,27 @@
+{
+    "event": "chargeback.created",
+    "data": {
+        "id": 42,
+        "status": "pending",
+        "description": "Disputa aberta pelo pagador",
+        "blockWalletAmount": true,
+        "blockCashOut": false,
+        "interactions": [],
+        "conciliatedAt": null,
+        "createdAt": "__CREATED_AT__",
+        "updatedAt": "__CREATED_AT__",
+        "invoice": {
+            "id": "__ID__",
+            "identifier": "__IDENTIFIER__",
+            "status": "in_dispute",
+            "amount": "__AMOUNT__",
+            "paidAt": "__PAID_AT__",
+            "externalId": "__EXTERNAL_ID__"
+        },
+        "recipient": {
+            "id": 7,
+            "name": "Reflorea",
+            "document": "00000000000191"
+        }
+    }
+}

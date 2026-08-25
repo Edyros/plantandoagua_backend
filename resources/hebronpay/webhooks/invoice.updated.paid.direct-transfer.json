@@ -1,0 +1,65 @@
+{
+    "event": "invoice.updated",
+    "data": {
+        "id": "__ID__",
+        "identifier": "__IDENTIFIER__",
+        "dueDate": "__DUE_DATE__",
+        "amount": "__AMOUNT__",
+        "calculatedFee": 0.09,
+        "calculatedSplit": null,
+        "description": "__DESCRIPTION__",
+        "metadata": {
+            "source": "reflorea",
+            "paymentContext": {
+                "operationId": "__EXTERNAL_ID__"
+            }
+        },
+        "status": "paid",
+        "statusHistory": [
+            {
+                "status": "pending",
+                "date": "__CREATED_AT__",
+                "changedBy": "SYSTEM"
+            },
+            {
+                "status": "paid",
+                "date": "__PAID_AT__",
+                "changedBy": "SYSTEM"
+            }
+        ],
+        "paymentMethod": "pix",
+        "paymentRules": null,
+        "releaseAt": "__PAID_AT__",
+        "conciliatedAt": "__PAID_AT__",
+        "externalId": "__EXTERNAL_ID__",
+        "origin": "api",
+        "antifraudAnalysis": null,
+        "client": {
+            "id": 101,
+            "name": "__CLIENT_NAME__",
+            "document": "__CLIENT_DOCUMENT__",
+            "email": "__CLIENT_EMAIL__",
+            "phone": "__CLIENT_PHONE__",
+            "address": null
+        },
+        "paymentData": {},
+        "paidAt": "__PAID_AT__",
+        "createdAt": "__CREATED_AT__",
+        "paymentMetadata": {
+            "receipt": {
+                "id": "tx-direct-456",
+                "e2eId": "E12345678202608211600direct90AB",
+                "date": "__PAID_AT__",
+                "directTransfer": true,
+                "payer": {
+                    "holderName": "__CLIENT_NAME__",
+                    "holderDocument": "__CLIENT_DOCUMENT__",
+                    "ispbCode": "12345678",
+                    "compeCode": "001",
+                    "agency": "0001",
+                    "account": "12345-6"
+                }
+            }
+        }
+    }
+}

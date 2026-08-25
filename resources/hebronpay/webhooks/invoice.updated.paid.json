@@ -1,0 +1,73 @@
+{
+    "event": "invoice.updated",
+    "data": {
+        "id": "__ID__",
+        "identifier": "__IDENTIFIER__",
+        "dueDate": "__DUE_DATE__",
+        "amount": "__AMOUNT__",
+        "calculatedFee": 0.09,
+        "calculatedSplit": null,
+        "description": "__DESCRIPTION__",
+        "metadata": {
+            "source": "reflorea",
+            "description": "__DESCRIPTION__",
+            "paymentContext": {
+                "operationId": "__EXTERNAL_ID__"
+            }
+        },
+        "status": "paid",
+        "statusHistory": [
+            {
+                "status": "pending",
+                "date": "__CREATED_AT__",
+                "changedBy": "SYSTEM"
+            },
+            {
+                "status": "paid",
+                "date": "__PAID_AT__",
+                "changedBy": "SYSTEM"
+            }
+        ],
+        "paymentMethod": "__PAYMENT_METHOD__",
+        "paymentRules": null,
+        "releaseAt": "__PAID_AT__",
+        "conciliatedAt": "__PAID_AT__",
+        "externalId": "__EXTERNAL_ID__",
+        "origin": "api",
+        "antifraudAnalysis": null,
+        "client": {
+            "id": 101,
+            "name": "__CLIENT_NAME__",
+            "document": "__CLIENT_DOCUMENT__",
+            "email": "__CLIENT_EMAIL__",
+            "phone": "__CLIENT_PHONE__",
+            "address": null
+        },
+        "paymentData": {
+            "pixKey": "00020126580014BR.GOV.BCB.PIX0136sandbox-fake-key@pix.com.br520400005303986540510.005802BR5920SANDBOX RECEIVER6009Sao Paulo62070503***6304FAKE",
+            "pixQrCode": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        },
+        "paidAt": "__PAID_AT__",
+        "createdAt": "__CREATED_AT__",
+        "paymentMetadata": {
+            "receipt": {
+                "id": "tx-sim-paid",
+                "e2eId": "E12345678202608211234567890AB",
+                "date": "__PAID_AT__",
+                "payer": {
+                    "holderName": "__CLIENT_NAME__",
+                    "holderDocument": "__CLIENT_DOCUMENT__",
+                    "ispbCode": "12345678",
+                    "compeCode": "001",
+                    "agency": "0001",
+                    "account": "12345-6"
+                },
+                "receiver": {
+                    "holderName": "Reflorea",
+                    "holderDocument": "00000000000191",
+                    "pixKey": "sandbox-fake-key@pix.com.br"
+                }
+            }
+        }
+    }
+}

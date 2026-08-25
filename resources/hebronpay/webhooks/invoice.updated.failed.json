@@ -1,0 +1,57 @@
+{
+    "event": "invoice.updated",
+    "data": {
+        "id": "__ID__",
+        "identifier": "__IDENTIFIER__",
+        "dueDate": "__DUE_DATE__",
+        "amount": "__AMOUNT__",
+        "calculatedFee": null,
+        "calculatedSplit": null,
+        "description": "__DESCRIPTION__",
+        "metadata": {
+            "source": "reflorea",
+            "paymentContext": {
+                "operationId": "__EXTERNAL_ID__"
+            }
+        },
+        "status": "failed",
+        "statusHistory": [
+            {
+                "status": "pending",
+                "date": "__CREATED_AT__",
+                "changedBy": "SYSTEM"
+            },
+            {
+                "status": "failed",
+                "date": "__PAID_AT__",
+                "changedBy": "SYSTEM",
+                "reasonKey": "payment_failed"
+            }
+        ],
+        "paymentMethod": "__PAYMENT_METHOD__",
+        "paymentRules": null,
+        "releaseAt": null,
+        "conciliatedAt": null,
+        "externalId": "__EXTERNAL_ID__",
+        "origin": "api",
+        "antifraudAnalysis": null,
+        "client": {
+            "id": 101,
+            "name": "__CLIENT_NAME__",
+            "document": "__CLIENT_DOCUMENT__",
+            "email": "__CLIENT_EMAIL__",
+            "phone": "__CLIENT_PHONE__",
+            "address": null
+        },
+        "paymentData": {
+            "pixKey": "00020126580014BR.GOV.BCB.PIX0136sandbox-fake-key@pix.com.br520400005303986540510.005802BR5920SANDBOX RECEIVER6009Sao Paulo62070503***6304FAKE",
+            "pixQrCode": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        },
+        "paidAt": null,
+        "createdAt": "__CREATED_AT__",
+        "paymentMetadata": {
+            "error": "Falha no pagamento (sandbox)",
+            "statusReason": "payment_failed"
+        }
+    }
+}

@@ -1,0 +1,33 @@
+{
+    "event": "chargeback.updated",
+    "data": {
+        "id": 42,
+        "status": "accepted",
+        "description": "Disputa atualizada",
+        "blockWalletAmount": true,
+        "blockCashOut": true,
+        "interactions": [
+            {
+                "type": "comment",
+                "date": "__PAID_AT__",
+                "message": "Chargeback confirmado (sandbox)"
+            }
+        ],
+        "conciliatedAt": null,
+        "createdAt": "__CREATED_AT__",
+        "updatedAt": "__PAID_AT__",
+        "invoice": {
+            "id": "__ID__",
+            "identifier": "__IDENTIFIER__",
+            "status": "in_dispute",
+            "amount": "__AMOUNT__",
+            "paidAt": "__PAID_AT__",
+            "externalId": "__EXTERNAL_ID__"
+        },
+        "recipient": {
+            "id": 7,
+            "name": "Reflorea",
+            "document": "00000000000191"
+        }
+    }
+}
