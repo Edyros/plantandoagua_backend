@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -58,6 +59,11 @@ class User extends Authenticatable
     public function plantings(): HasMany
     {
         return $this->hasMany(Planting::class);
+    }
+
+    public function shop(): HasOne
+    {
+        return $this->hasOne(Shop::class);
     }
 
     public function payments(): HasMany
