@@ -38,6 +38,11 @@ class PlantingPhotoService
         return $this->store($file, $userId, 'avatars');
     }
 
+    public function storeShopLogo(UploadedFile $file, int|string $userId): string
+    {
+        return $this->store($file, $userId, 'shop-logos');
+    }
+
     /**
      * @param  list<mixed>|null  $paths
      * @return list<string>

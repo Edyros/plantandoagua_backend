@@ -26,6 +26,7 @@ class Shop extends Model
         'longitude',
         'categories',
         'products',
+        'logo_url',
     ];
 
     /**

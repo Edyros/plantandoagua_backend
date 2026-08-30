@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\UpdatePreferencesRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -92,6 +93,41 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => new UserResource($user),
+        ]);
+    }
+
+    public function preferences(Request $request): JsonResponse
+    {
+        return response()->json([
+            'preferences' => $request->user()->preferencePayload(),
+        ]);
+    }
+
+    public function updatePreferences(UpdatePreferencesRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $data = $request->validated();
+
+        $map = [
+            'appearOnCommunityMap' => 'appear_on_community_map',
+            'publicProfile' => 'public_profile',
+            'showCityOnProfile' => 'show_city_on_profile',
+            'pinPrecision' => 'pin_precision',
+            'monthlyGoal' => 'monthly_goal',
+            'defaultMapFilter' => 'default_map_filter',
+        ];
+
+        foreach ($map as $camel => $snake) {
+            if (array_key_exists($camel, $data)) {
+                $user->{$snake} = $data[$camel];
+            }
+        }
+
+        $user->save();
+
+        return response()->json([
+            'preferences' => $user->preferencePayload(),
         ]);
     }
 

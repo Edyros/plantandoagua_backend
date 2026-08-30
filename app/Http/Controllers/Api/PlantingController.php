@@ -34,6 +34,7 @@ class PlantingController extends Controller
     {
         $plantings = Planting::query()
             ->with('user')
+            ->whereHas('user', fn ($query) => $query->where('appear_on_community_map', true))
             ->orderByDesc('planted_at')
             ->limit(500)
             ->get();
@@ -46,6 +47,13 @@ class PlantingController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $planting = Planting::query()->with('user')->findOrFail($id);
+        $viewerId = (int) $request->user()->id;
+        $isOwner = $viewerId === (int) $planting->user_id;
+        $visibleOnMap = (bool) ($planting->user?->appear_on_community_map ?? true);
+
+        if (! $isOwner && ! $visibleOnMap) {
+            abort(404, 'Plantio não encontrado.');
+        }
 
         return response()->json([
             'planting' => new PlantingResource($planting),

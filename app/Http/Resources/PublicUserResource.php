@@ -13,11 +13,13 @@ class PublicUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $showCity = (bool) $this->show_city_on_profile;
+
         return [
             'id' => $this->uuid,
             'name' => $this->name,
-            'city' => $this->city,
-            'state' => $this->state,
+            'city' => $showCity ? $this->city : null,
+            'state' => $showCity ? $this->state : null,
             'avatarUri' => app(PlantingPhotoService::class)->publicUrl($this->avatar_url),
             'ecoPoints' => (int) $this->eco_points,
             'treesPlanted' => (int) $this->trees_planted,

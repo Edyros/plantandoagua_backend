@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'ecoPoints' => $this->eco_points,
             'treesPlanted' => $this->trees_planted,
             'profileComplete' => $this->profile_complete,
+            'preferences' => $this->preferencePayload(),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
             'syncStatus' => 'synced',

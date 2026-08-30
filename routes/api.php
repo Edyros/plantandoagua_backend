@@ -17,6 +17,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::put('/user', [AuthController::class, 'update']);
     Route::post('/user', [AuthController::class, 'update']);
+    Route::get('/user/preferences', [AuthController::class, 'preferences']);
+    Route::put('/user/preferences', [AuthController::class, 'updatePreferences']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -25,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/shops/me', [ShopController::class, 'me']);
     Route::post('/shops', [ShopController::class, 'store']);
     Route::get('/shops/{id}', [ShopController::class, 'show']);
+    Route::post('/shops/{id}', [ShopController::class, 'update']);
     Route::put('/shops/{id}', [ShopController::class, 'update']);
     Route::patch('/shops/{id}', [ShopController::class, 'update']);
     Route::delete('/shops/{id}', [ShopController::class, 'destroy']);

@@ -7,12 +7,15 @@ use App\Http\Requests\Shop\StoreShopRequest;
 use App\Http\Requests\Shop\UpdateShopRequest;
 use App\Http\Resources\ShopResource;
 use App\Models\Shop;
+use App\Services\PlantingPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class ShopController extends Controller
 {
+    public function __construct(private PlantingPhotoService $photos) {}
+
     public function index(): JsonResponse
     {
         $shops = Shop::query()
@@ -65,6 +68,7 @@ class ShopController extends Controller
 
             $existing->fill($data);
             $existing->save();
+            $this->storeLogo($request, $existing);
             $existing->load('user');
 
             return response()->json([
@@ -82,6 +86,7 @@ class ShopController extends Controller
             'id' => $id,
             'user_id' => $request->user()->id,
         ]);
+        $this->storeLogo($request, $shop);
         $shop->load('user');
 
         return response()->json([
@@ -99,6 +104,7 @@ class ShopController extends Controller
 
         $shop->fill($this->mapPayload($request->validated()));
         $shop->save();
+        $this->storeLogo($request, $shop);
         $shop->load('user');
 
         return response()->json([
@@ -155,5 +161,16 @@ class ShopController extends Controller
         }
 
         return array_filter($mapped, fn ($value) => $value !== null);
+    }
+
+    private function storeLogo(Request $request, Shop $shop): void
+    {
+        if (! $request->hasFile('logo')) {
+            return;
+        }
+
+        $this->photos->deleteMany([$shop->logo_url]);
+        $shop->logo_url = $this->photos->storeShopLogo($request->file('logo'), $request->user()->id);
+        $shop->save();
     }
 }

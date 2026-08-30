@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\PlantingPhotoService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -25,6 +26,7 @@ class ShopResource extends JsonResource
             'longitude' => (float) $this->longitude,
             'categories' => array_values($this->categories ?? []),
             'products' => array_values($this->products ?? []),
+            'logoUri' => app(PlantingPhotoService::class)->publicUrl($this->logo_url),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
             'syncStatus' => 'synced',

@@ -7,12 +7,18 @@ use App\Http\Resources\PlantingResource;
 use App\Http\Resources\PublicUserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $user = User::query()->where('uuid', $id)->firstOrFail();
+
+        $viewerId = $request->user()?->id;
+        if (! $user->public_profile && (int) $viewerId !== (int) $user->id) {
+            abort(404, 'Este perfil está oculto.');
+        }
 
         $plantings = $user->plantings()
             ->with('user')
