@@ -27,6 +27,14 @@ class Shop extends Model
         'categories',
         'products',
         'logo_url',
+        'visible',
+    ];
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'visible' => true,
     ];
 
     /**
@@ -39,6 +47,7 @@ class Shop extends Model
             'longitude' => 'float',
             'categories' => 'array',
             'products' => 'array',
+            'visible' => 'boolean',
         ];
     }
 

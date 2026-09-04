@@ -16,10 +16,14 @@ class ShopController extends Controller
 {
     public function __construct(private PlantingPhotoService $photos) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $viewerId = (int) $request->user()->id;
         $shops = Shop::query()
             ->with('user')
+            ->where(function ($query) use ($viewerId) {
+                $query->where('visible', true)->orWhere('user_id', $viewerId);
+            })
             ->orderBy('name')
             ->limit(500)
             ->get();
@@ -45,9 +49,14 @@ class ShopController extends Controller
         ]);
     }
 
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         $shop = Shop::query()->with('user')->findOrFail($id);
+        $isOwner = (int) $shop->user_id === (int) $request->user()->id;
+
+        if (! ($shop->visible ?? true) && ! $isOwner) {
+            abort(404, 'Esta loja está oculta.');
+        }
 
         return response()->json([
             'shop' => new ShopResource($shop),
@@ -144,6 +153,10 @@ class ShopController extends Controller
             'categories' => $input['categories'] ?? null,
             'products' => $input['products'] ?? null,
         ];
+
+        if (array_key_exists('visible', $input)) {
+            $mapped['visible'] = (bool) $input['visible'];
+        }
 
         if (isset($input['id'])) {
             $mapped['id'] = $input['id'];

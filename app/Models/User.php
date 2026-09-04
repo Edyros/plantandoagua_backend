@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -84,9 +85,9 @@ class User extends Authenticatable
     public function preferencePayload(): array
     {
         return [
-            'appearOnCommunityMap' => (bool) $this->appear_on_community_map,
-            'publicProfile' => (bool) $this->public_profile,
-            'showCityOnProfile' => (bool) $this->show_city_on_profile,
+            'appearOnCommunityMap' => (bool) ($this->appear_on_community_map ?? true),
+            'publicProfile' => (bool) ($this->public_profile ?? true),
+            'showCityOnProfile' => (bool) ($this->show_city_on_profile ?? true),
             'pinPrecision' => $this->pin_precision ?: 'exact',
             'monthlyGoal' => (int) ($this->monthly_goal ?: 20),
             'defaultMapFilter' => $this->default_map_filter ?: 'mine',
@@ -106,5 +107,15 @@ class User extends Authenticatable
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function campaigns(): HasMany
+    {
+        return $this->hasMany(Campaign::class);
+    }
+
+    public function unlockedCampaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(Campaign::class)->withTimestamps();
     }
 }

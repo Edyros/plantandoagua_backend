@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\Dev\SimulateHebronPayWebhookController;
 use App\Http\Controllers\Api\HebronPayWebhookController;
 use App\Http\Controllers\Api\PaymentController;
@@ -31,6 +32,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/shops/{id}', [ShopController::class, 'update']);
     Route::patch('/shops/{id}', [ShopController::class, 'update']);
     Route::delete('/shops/{id}', [ShopController::class, 'destroy']);
+
+    Route::get('/campaigns', [CampaignController::class, 'index']);
+    Route::get('/campaigns/mine', [CampaignController::class, 'mine']);
+    Route::get('/campaigns/unlocked', [CampaignController::class, 'unlocked']);
+    Route::post('/campaigns', [CampaignController::class, 'store']);
+    Route::post('/campaigns/redeem', [CampaignController::class, 'redeem']);
+    Route::get('/campaigns/{id}', [CampaignController::class, 'show']);
+    Route::post('/campaigns/{id}/status', [CampaignController::class, 'updateStatus']);
+    Route::get('/campaigns/{id}/plantings', [CampaignController::class, 'plantings']);
 
     Route::get('/plantings/community', [PlantingController::class, 'community']);
     Route::get('/plantings', [PlantingController::class, 'index']);

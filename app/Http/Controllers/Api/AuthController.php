@@ -30,6 +30,12 @@ class AuthController extends Controller
             'phone' => $request->string('phone')->trim(),
             'cpf' => $request->input('cpf'),
             'profile_complete' => 40,
+            'appear_on_community_map' => true,
+            'public_profile' => true,
+            'show_city_on_profile' => true,
+            'pin_precision' => 'exact',
+            'monthly_goal' => 20,
+            'default_map_filter' => 'mine',
         ]);
 
         $token = $user->createToken('mobile')->plainTextToken;

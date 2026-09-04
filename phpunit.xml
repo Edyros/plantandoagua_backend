@@ -36,5 +36,7 @@
         <env name="HEBRONPAY_API_KEY" value="test-key"/>
         <env name="HEBRONPAY_API_SECRET" value="test-secret"/>
         <env name="HEBRONPAY_WEBHOOK_SECRET" value="test-webhook-secret"/>
+        <env name="PLAY_STORE_URL" value="https://play.google.com/store/apps/details?id=com.globaltreememory.app"/>
+        <env name="APP_STORE_URL" value="https://apps.apple.com/br/search?term=Plantando%20Agua"/>
     </php>
 </phpunit>

@@ -43,6 +43,7 @@ class ShopTest extends TestCase
             ->assertJsonPath('shop.name', 'Viveiro do Vale')
             ->assertJsonPath('shop.state', 'SP')
             ->assertJsonPath('shop.products.0', 'Mudas nativas')
+            ->assertJsonPath('shop.visible', true)
             ->assertJsonMissingPath('shop.price')
             ->assertJsonMissingPath('shop.products.0.price');
 
@@ -124,6 +125,45 @@ class ShopTest extends TestCase
             ->assertJsonMissingPath('shop.price');
     }
 
+    public function test_hidden_shop_is_omitted_from_community_but_visible_to_owner(): void
+    {
+        $owner = $this->makeUser(['email' => 'dona@example.com']);
+        $viewer = $this->makeUser(['email' => 'visita@example.com']);
+        $shop = Shop::query()->create($this->shopAttrs($owner->id, (string) Str::uuid(), [
+            'name' => 'Loja reservada',
+            'visible' => false,
+        ]));
+
+        Sanctum::actingAs($viewer);
+
+        $this->getJson('/api/shops')
+            ->assertOk()
+            ->assertJsonCount(0, 'shops');
+
+        $this->getJson('/api/shops/'.$shop->id)->assertNotFound();
+
+        Sanctum::actingAs($owner);
+
+        $this->getJson('/api/shops')
+            ->assertOk()
+            ->assertJsonPath('shops.0.id', $shop->id)
+            ->assertJsonPath('shops.0.visible', false);
+
+        $this->getJson('/api/shops/'.$shop->id)
+            ->assertOk()
+            ->assertJsonPath('shop.visible', false);
+
+        $this->patchJson('/api/shops/'.$shop->id, ['visible' => true])
+            ->assertOk()
+            ->assertJsonPath('shop.visible', true);
+
+        Sanctum::actingAs($viewer);
+
+        $this->getJson('/api/shops')
+            ->assertOk()
+            ->assertJsonPath('shops.0.id', $shop->id);
+    }
+
     public function test_user_cannot_update_someone_elses_shop(): void
     {
         $owner = $this->makeUser(['email' => 'dona@example.com']);
@@ -167,6 +207,7 @@ class ShopTest extends TestCase
             'longitude' => -47.6492,
             'categories' => ['mudas'],
             'products' => ['Mudas nativas'],
+            'visible' => true,
         ], $overrides);
     }
 }

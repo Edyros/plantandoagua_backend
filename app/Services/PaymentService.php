@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\HebronPayException;
+use App\Models\Campaign;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -179,6 +180,8 @@ class PaymentService
             'paid_at' => $this->parseDate($this->firstString($invoice, ['paidAt', 'paid_at'])) ?? $payment->paid_at,
             'provider_payload' => $invoice,
         ])->save();
+
+        Campaign::activatePaid($payment->fresh() ?? $payment);
     }
 
     /**

@@ -21,6 +21,28 @@ class UserPreferencesTest extends TestCase
         ])->assertUnauthorized();
     }
 
+    public function test_new_account_starts_with_privacy_enabled(): void
+    {
+        $this->postJson('/api/register', [
+            'name' => 'Nova Conta',
+            'email' => 'nova@example.com',
+            'phone' => '11988887777',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('user.preferences.appearOnCommunityMap', true)
+            ->assertJsonPath('user.preferences.publicProfile', true)
+            ->assertJsonPath('user.preferences.showCityOnProfile', true);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'nova@example.com',
+            'appear_on_community_map' => 1,
+            'public_profile' => 1,
+            'show_city_on_profile' => 1,
+        ]);
+    }
+
     public function test_user_receives_default_preferences(): void
     {
         $user = $this->makeUser();
@@ -93,7 +115,8 @@ class UserPreferencesTest extends TestCase
             ->assertJsonPath('plantings.0.species', 'Ipê-amarelo');
 
         $this->getJson('/api/plantings/'.$hidden->plantings()->first()->id)
-            ->assertNotFound();
+            ->assertNotFound()
+            ->assertJsonPath('message', 'Este plantio está oculto.');
 
         Sanctum::actingAs($hidden);
 
@@ -118,6 +141,11 @@ class UserPreferencesTest extends TestCase
         $this->getJson('/api/users/'.$planter->uuid)
             ->assertNotFound()
             ->assertJsonPath('message', 'Este perfil está oculto.');
+
+        $this->getJson('/api/plantings/community')
+            ->assertOk()
+            ->assertJsonPath('plantings.0.publicProfile', false)
+            ->assertJsonPath('plantings.0.userName', null);
 
         Sanctum::actingAs($planter);
         $this->getJson('/api/users/'.$planter->uuid)

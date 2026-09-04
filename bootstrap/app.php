@@ -42,6 +42,6 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'message' => is_string($first) ? $first : 'Verifique os dados enviados.',
                 'errors' => $e->errors(),
-            ], $e->status());
+            ], $e->status);
         });
     })->create();

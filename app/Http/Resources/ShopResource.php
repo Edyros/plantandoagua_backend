@@ -27,6 +27,7 @@ class ShopResource extends JsonResource
             'categories' => array_values($this->categories ?? []),
             'products' => array_values($this->products ?? []),
             'logoUri' => app(PlantingPhotoService::class)->publicUrl($this->logo_url),
+            'visible' => (bool) ($this->visible ?? true),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
             'syncStatus' => 'synced',

@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Planting\StorePlantingRequest;
 use App\Http\Requests\Planting\UpdatePlantingRequest;
 use App\Http\Resources\PlantingResource;
+use App\Models\Campaign;
 use App\Models\Planting;
 use App\Services\PlantingPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PlantingController extends Controller
@@ -20,7 +22,7 @@ class PlantingController extends Controller
     {
         $plantings = $request->user()
             ->plantings()
-            ->with('user')
+            ->with(['user', 'campaign'])
             ->orderByDesc('planted_at')
             ->limit(500)
             ->get();
@@ -33,7 +35,7 @@ class PlantingController extends Controller
     public function community(): JsonResponse
     {
         $plantings = Planting::query()
-            ->with('user')
+            ->with(['user', 'campaign'])
             ->whereHas('user', fn ($query) => $query->where('appear_on_community_map', true))
             ->orderByDesc('planted_at')
             ->limit(500)
@@ -46,13 +48,13 @@ class PlantingController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $planting = Planting::query()->with('user')->findOrFail($id);
+        $planting = Planting::query()->with(['user', 'campaign'])->findOrFail($id);
         $viewerId = (int) $request->user()->id;
         $isOwner = $viewerId === (int) $planting->user_id;
         $visibleOnMap = (bool) ($planting->user?->appear_on_community_map ?? true);
 
         if (! $isOwner && ! $visibleOnMap) {
-            abort(404, 'Plantio não encontrado.');
+            abort(404, 'Este plantio está oculto.');
         }
 
         return response()->json([
@@ -67,6 +69,8 @@ class PlantingController extends Controller
             $this->photos->store($request->file('photo'), $request->user()->id),
         ];
         $id = $data['id'] ?? (string) Str::uuid();
+        $campaignId = $data['campaign_id'] ?? null;
+        $inviteCode = $request->input('inviteCode') ?? $request->input('invite_code');
 
         $existing = Planting::query()->find($id);
         if ($existing) {
@@ -75,9 +79,9 @@ class PlantingController extends Controller
             }
 
             $this->photos->deleteMany($existing->photo_uris);
-            $existing->fill(collect($data)->except('id')->all());
+            $existing->fill(collect($data)->except(['id', 'campaign_id'])->all());
             $existing->save();
-            $existing->load('user');
+            $existing->load(['user', 'campaign']);
 
             $this->refreshUserTreesCount($request->user());
 
@@ -86,12 +90,22 @@ class PlantingController extends Controller
             ]);
         }
 
-        $planting = Planting::create([
-            ...collect($data)->except('id')->all(),
-            'id' => $id,
-            'user_id' => $request->user()->id,
-        ]);
-        $planting->load('user');
+        $planting = DB::transaction(function () use ($request, $data, $id, $campaignId, $inviteCode) {
+            $payload = collect($data)->except(['id', 'campaign_id'])->all();
+            $payload['id'] = $id;
+            $payload['user_id'] = $request->user()->id;
+            $payload['campaign_id'] = null;
+
+            if ($campaignId) {
+                $campaign = $this->claimCampaign($request->user(), $campaignId, is_string($inviteCode) ? $inviteCode : null);
+                $payload['campaign_id'] = $campaign->id;
+            }
+
+            $created = Planting::create($payload);
+            $created->load(['user', 'campaign']);
+
+            return $created;
+        });
 
         $this->refreshUserTreesCount($request->user());
 
@@ -117,9 +131,9 @@ class PlantingController extends Controller
             ];
         }
 
-        $planting->fill($data);
+        $planting->fill(collect($data)->except('campaign_id')->all());
         $planting->save();
-        $planting->load('user');
+        $planting->load(['user', 'campaign']);
 
         $this->refreshUserTreesCount($request->user());
 
@@ -168,6 +182,7 @@ class PlantingController extends Controller
             'location_name' => $get('locationName', 'location_name'),
             'city' => $input['city'] ?? null,
             'state' => $input['state'] ?? null,
+            'campaign_id' => $get('campaignId', 'campaign_id'),
         ];
 
         if (isset($input['id'])) {
@@ -181,5 +196,49 @@ class PlantingController extends Controller
     {
         $total = $user->plantings()->sum('quantity');
         $user->forceFill(['trees_planted' => (int) $total])->save();
+    }
+
+    private function claimCampaign($user, string $campaignId, ?string $inviteCode): Campaign
+    {
+        $campaign = Campaign::query()->lockForUpdate()->find($campaignId);
+        if (! $campaign) {
+            abort(404, 'Campanha não encontrada.');
+        }
+
+        if ($inviteCode) {
+            $normalized = strtoupper(preg_replace('/\s+/', '', $inviteCode) ?? $inviteCode);
+            if ($campaign->isInvite() && is_string($campaign->invite_code) && $campaign->invite_code === $normalized) {
+                if (! $campaign->isOwner($user)) {
+                    $campaign->unlockedUsers()->syncWithoutDetaching([$user->id]);
+                }
+            }
+        }
+
+        if ($campaign->status === Campaign::STATUS_PAUSED) {
+            abort(409, 'Esta campanha está pausada.');
+        }
+
+        if ($campaign->status === Campaign::STATUS_CANCELED) {
+            abort(409, 'Esta campanha foi cancelada.');
+        }
+
+        if ($campaign->status !== Campaign::STATUS_ACTIVE || $campaign->remaining < 1) {
+            abort(409, 'Esta campanha não tem mais créditos.');
+        }
+
+        if (! $campaign->canBeUsedBy($user)) {
+            abort(403, 'Você não tem acesso a esta campanha.');
+        }
+
+        if ($campaign->per_user_limit !== null) {
+            $userPlanted = $campaign->plantings()->where('user_id', $user->id)->count();
+            if ($userPlanted >= $campaign->per_user_limit) {
+                abort(409, 'Você já atingiu seu limite nesta campanha ('.$campaign->per_user_limit.' plantio(s)).');
+            }
+        }
+
+        $campaign->consumeCredit();
+
+        return $campaign;
     }
 }

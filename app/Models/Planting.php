@@ -17,6 +17,7 @@ class Planting extends Model
     protected $fillable = [
         'id',
         'user_id',
+        'campaign_id',
         'species',
         'scientific_name',
         'quantity',
@@ -49,5 +50,10 @@ class Planting extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class);
     }
 }

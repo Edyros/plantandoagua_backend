@@ -36,6 +36,10 @@ class StorePlantingRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:2'],
             'photo' => ['required', 'file', 'mimes:jpeg,jpg,png,webp,heic', 'max:5120'],
+            'campaignId' => ['nullable', 'uuid'],
+            'campaign_id' => ['nullable', 'uuid'],
+            'inviteCode' => ['nullable', 'string', 'max:24'],
+            'invite_code' => ['nullable', 'string', 'max:24'],
         ];
     }
 

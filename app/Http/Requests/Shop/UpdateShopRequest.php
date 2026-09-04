@@ -28,6 +28,7 @@ class UpdateShopRequest extends FormRequest
             'categories.*' => ['string', 'in:mudas,jardinagem,adubo,ferramentas,irrigacao'],
             'products' => ['nullable', 'array', 'max:20'],
             'products.*' => ['string', 'max:80'],
+            'visible' => ['sometimes', 'boolean'],
             'logo' => ['nullable', 'image', 'max:8192'],
         ];
     }
