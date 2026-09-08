@@ -24,6 +24,7 @@ class PlantingResource extends JsonResource
             'userName' => $this->whenLoaded('user', fn () => $showName ? $this->user?->name : null),
             'campaignId' => $this->campaign_id,
             'campaignName' => $this->whenLoaded('campaign', fn () => $this->campaign?->name),
+            'kind' => $this->kind ?: 'planted',
             'publicProfile' => $publicProfile,
             'species' => $this->species,
             'scientificName' => $this->scientific_name,
@@ -41,6 +42,10 @@ class PlantingResource extends JsonResource
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
             'syncStatus' => 'synced',
+            'updates' => $this->whenLoaded(
+                'updates',
+                fn () => PlantingUpdateResource::collection($this->updates),
+            ),
         ];
     }
 }

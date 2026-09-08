@@ -35,6 +35,7 @@ class UpdatePlantingRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:2'],
             'photo' => ['sometimes', 'file', 'mimes:jpeg,jpg,png,webp,heic', 'max:5120'],
+            'kind' => ['nullable', 'string', 'in:planted,adopted'],
         ];
     }
 

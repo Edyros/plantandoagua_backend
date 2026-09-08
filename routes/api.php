@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Dev\SimulateHebronPayWebhookController;
 use App\Http\Controllers\Api\HebronPayWebhookController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PlantingController;
+use App\Http\Controllers\Api\PlantingUpdateController;
 use App\Http\Controllers\Api\ShopController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/plantings', [PlantingController::class, 'index']);
     Route::post('/plantings', [PlantingController::class, 'store']);
     Route::get('/plantings/{id}', [PlantingController::class, 'show']);
+    Route::post('/plantings/{id}/updates', [PlantingUpdateController::class, 'store']);
     Route::post('/plantings/{id}', [PlantingController::class, 'update']);
     Route::put('/plantings/{id}', [PlantingController::class, 'update']);
     Route::patch('/plantings/{id}', [PlantingController::class, 'update']);

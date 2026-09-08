@@ -48,7 +48,7 @@ class PlantingController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $planting = Planting::query()->with(['user', 'campaign'])->findOrFail($id);
+        $planting = Planting::query()->with(['user', 'campaign', 'updates.user'])->findOrFail($id);
         $viewerId = (int) $request->user()->id;
         $isOwner = $viewerId === (int) $planting->user_id;
         $visibleOnMap = (bool) ($planting->user?->appear_on_community_map ?? true);
@@ -150,7 +150,11 @@ class PlantingController extends Controller
             abort(403, 'Este plantio pertence a outro usuário.');
         }
 
+        $planting->load('updates');
         $this->photos->deleteMany($planting->photo_uris);
+        foreach ($planting->updates as $update) {
+            $this->photos->deleteMany($update->photo_uris);
+        }
         $planting->delete();
         $this->refreshUserTreesCount($request->user());
 
@@ -183,6 +187,7 @@ class PlantingController extends Controller
             'city' => $input['city'] ?? null,
             'state' => $input['state'] ?? null,
             'campaign_id' => $get('campaignId', 'campaign_id'),
+            'kind' => $get('kind', 'kind') ?: 'planted',
         ];
 
         if (isset($input['id'])) {

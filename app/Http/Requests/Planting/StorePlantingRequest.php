@@ -40,6 +40,7 @@ class StorePlantingRequest extends FormRequest
             'campaign_id' => ['nullable', 'uuid'],
             'inviteCode' => ['nullable', 'string', 'max:24'],
             'invite_code' => ['nullable', 'string', 'max:24'],
+            'kind' => ['nullable', 'string', 'in:planted,adopted'],
         ];
     }
 

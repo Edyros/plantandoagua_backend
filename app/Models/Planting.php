@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Planting extends Model
 {
@@ -18,6 +19,7 @@ class Planting extends Model
         'id',
         'user_id',
         'campaign_id',
+        'kind',
         'species',
         'scientific_name',
         'quantity',
@@ -55,5 +57,10 @@ class Planting extends Model
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function updates(): HasMany
+    {
+        return $this->hasMany(PlantingUpdate::class)->orderByDesc('observed_at');
     }
 }
