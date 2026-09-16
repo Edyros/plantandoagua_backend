@@ -26,8 +26,10 @@ class UserController extends Controller
             ->limit(100)
             ->get();
 
-        if ((int) $user->trees_planted === 0 && $plantings->isNotEmpty()) {
-            $user->trees_planted = (int) $plantings->sum('quantity');
+        if ((int) $user->trees_planted === 0 && (int) $user->trees_adopted === 0 && $plantings->isNotEmpty()) {
+            $counts = $user->treeCounts();
+            $user->trees_planted = $counts['planted'];
+            $user->trees_adopted = $counts['adopted'];
         }
 
         return response()->json([

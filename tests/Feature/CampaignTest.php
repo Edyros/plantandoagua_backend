@@ -60,13 +60,202 @@ class CampaignTest extends TestCase
             ->assertJsonPath('campaign.visibility', 'public')
             ->assertJsonPath('campaign.status', 'pending_payment')
             ->assertJsonPath('payment.amountCents', 5000)
-            ->assertJsonPath('campaign.inviteCode', null);
+            ->assertJsonPath('campaign.inviteCode', null)
+            ->assertJsonPath('campaign.area', null);
 
         $this->simulatePaidWebhook('inv_campaign');
 
         $this->assertDatabaseHas('campaigns', [
             'name' => 'Bosque Acme',
             'status' => Campaign::STATUS_ACTIVE,
+        ]);
+    }
+
+    public function test_user_can_create_event_campaign_with_cnpj_and_social_links(): void
+    {
+        Http::fake([
+            'https://api.hebronpay.com.br/v1/invoices/recipient' => Http::response([
+                'id' => 'inv_event',
+                'status' => 'pending',
+            ], 201),
+        ]);
+
+        Sanctum::actingAs($this->makeUser());
+
+        $this->postJson('/api/campaigns', [
+            'name' => 'Festival da Árvore',
+            'quantity' => 10,
+            'visibility' => 'public',
+            'payerName' => 'Instituto Verde Vida',
+            'payerCpf' => '11.444.777/0001-61',
+            'website' => 'festivalarvore.org',
+            'instagram' => '@festivalarvore',
+            'facebook' => 'https://facebook.com/festivalarvore',
+            'linkedin' => 'https://www.linkedin.com/company/festivalarvore',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('campaign.name', 'Festival da Árvore')
+            ->assertJsonPath('campaign.website', 'https://festivalarvore.org')
+            ->assertJsonPath('campaign.instagram', '@festivalarvore')
+            ->assertJsonPath('campaign.facebook', 'https://facebook.com/festivalarvore')
+            ->assertJsonPath('campaign.linkedin', 'https://www.linkedin.com/company/festivalarvore');
+    }
+
+    public function test_user_can_create_campaign_with_map_area(): void
+    {
+        Http::fake([
+            'https://api.hebronpay.com.br/v1/invoices/recipient' => Http::response([
+                'id' => 'inv_area',
+                'status' => 'pending',
+            ], 201),
+        ]);
+
+        Sanctum::actingAs($this->makeUser());
+
+        $area = [
+            'vertices' => [
+                ['latitude' => -23.55, 'longitude' => -46.64],
+                ['latitude' => -23.55, 'longitude' => -46.62],
+                ['latitude' => -23.56, 'longitude' => -46.62],
+                ['latitude' => -23.56, 'longitude' => -46.64],
+            ],
+        ];
+
+        $this->postJson('/api/campaigns', [
+            'name' => 'Bosque do Parque',
+            'quantity' => 10,
+            'visibility' => 'public',
+            'area' => $area,
+        ])->assertCreated()
+            ->assertJsonPath('campaign.area.vertices.0.latitude', -23.55)
+            ->assertJsonPath('campaign.area.vertices.3.longitude', -46.64);
+
+        $this->assertDatabaseHas('areas', [
+            'kind' => 'campaign',
+            'name' => 'Bosque do Parque',
+        ]);
+
+        $this->postJson('/api/campaigns', [
+            'name' => 'Área incompleta',
+            'quantity' => 10,
+            'visibility' => 'public',
+            'area' => [
+                'vertices' => [
+                    ['latitude' => -23.55, 'longitude' => -46.64],
+                    ['latitude' => -23.55, 'longitude' => -46.62],
+                ],
+            ],
+        ])->assertUnprocessable();
+    }
+
+    public function test_owner_can_rename_campaign(): void
+    {
+        Http::fake([
+            'https://api.hebronpay.com.br/v1/invoices/recipient' => Http::response([
+                'id' => 'inv_rename',
+                'status' => 'pending',
+            ], 201),
+        ]);
+
+        $owner = $this->makeUser();
+        Sanctum::actingAs($owner);
+
+        $created = $this->postJson('/api/campaigns', [
+            'name' => 'Bosque velho',
+            'quantity' => 10,
+            'visibility' => 'public',
+            'area' => [
+                'vertices' => [
+                    ['latitude' => -23.55, 'longitude' => -46.64],
+                    ['latitude' => -23.55, 'longitude' => -46.62],
+                    ['latitude' => -23.56, 'longitude' => -46.62],
+                    ['latitude' => -23.56, 'longitude' => -46.64],
+                ],
+            ],
+        ])->assertCreated();
+
+        $campaignId = $created->json('campaign.id');
+        $areaId = $created->json('campaign.area.id');
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'name' => '  Bosque novo  ',
+        ])->assertOk()
+            ->assertJsonPath('campaign.name', 'Bosque novo')
+            ->assertJsonPath('campaign.area.name', 'Bosque novo');
+
+        $this->assertDatabaseHas('campaigns', [
+            'id' => $campaignId,
+            'name' => 'Bosque novo',
+        ]);
+        $this->assertDatabaseHas('areas', [
+            'id' => $areaId,
+            'name' => 'Bosque novo',
+        ]);
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'name' => '',
+        ])->assertUnprocessable();
+
+        Sanctum::actingAs($this->makeUser([
+            'email' => 'outra@example.com',
+        ]));
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'name' => 'Hijack',
+        ])->assertForbidden();
+    }
+
+    public function test_owner_can_update_and_clear_campaign_area(): void
+    {
+        Http::fake([
+            'https://api.hebronpay.com.br/v1/invoices/recipient' => Http::response([
+                'id' => 'inv_area_edit',
+                'status' => 'pending',
+            ], 201),
+        ]);
+
+        Sanctum::actingAs($this->makeUser());
+
+        $created = $this->postJson('/api/campaigns', [
+            'name' => 'Bosque do vale',
+            'quantity' => 10,
+            'visibility' => 'public',
+        ])->assertCreated()
+            ->assertJsonPath('campaign.area', null);
+
+        $campaignId = $created->json('campaign.id');
+        $vertices = [
+            ['latitude' => -23.55, 'longitude' => -46.64],
+            ['latitude' => -23.55, 'longitude' => -46.62],
+            ['latitude' => -23.56, 'longitude' => -46.62],
+            ['latitude' => -23.56, 'longitude' => -46.64],
+        ];
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'area' => ['vertices' => $vertices],
+        ])->assertOk()
+            ->assertJsonPath('campaign.area.vertices.0.latitude', -23.55)
+            ->assertJsonPath('campaign.area.vertices.3.longitude', -46.64)
+            ->assertJsonPath('campaign.area.name', 'Bosque do vale');
+
+        $areaId = $this->getJson('/api/campaigns/'.$campaignId)->json('campaign.area.id');
+
+        $moved = $vertices;
+        $moved[0] = ['latitude' => -23.54, 'longitude' => -46.64];
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'area' => ['vertices' => $moved],
+        ])->assertOk()
+            ->assertJsonPath('campaign.area.id', $areaId)
+            ->assertJsonPath('campaign.area.vertices.0.latitude', -23.54);
+
+        $this->patchJson('/api/campaigns/'.$campaignId, [
+            'area' => null,
+        ])->assertOk()
+            ->assertJsonPath('campaign.area', null);
+
+        $this->assertDatabaseMissing('areas', [
+            'id' => $areaId,
         ]);
     }
 

@@ -199,8 +199,7 @@ class PlantingController extends Controller
 
     private function refreshUserTreesCount($user): void
     {
-        $total = $user->plantings()->sum('quantity');
-        $user->forceFill(['trees_planted' => (int) $total])->save();
+        $user->refreshTreesCounts();
     }
 
     private function claimCampaign($user, string $campaignId, ?string $inviteCode): Campaign

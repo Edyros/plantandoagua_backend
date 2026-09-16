@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Planting extends Model
 {
+    public const KIND_PLANTED = 'planted';
+
+    public const KIND_ADOPTED = 'adopted';
+
     public $incrementing = false;
 
     protected $keyType = 'string';

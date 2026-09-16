@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\HebronPayException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Shop\StoreShopListingRequest;
 use App\Http\Requests\Shop\StoreShopRequest;
 use App\Http\Requests\Shop\UpdateShopRequest;
+use App\Http\Resources\PaymentResource;
 use App\Http\Resources\ShopResource;
 use App\Models\Shop;
+use App\Services\PaymentService;
 use App\Services\PlantingPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +18,10 @@ use Illuminate\Support\Str;
 
 class ShopController extends Controller
 {
-    public function __construct(private PlantingPhotoService $photos) {}
+    public function __construct(
+        private PlantingPhotoService $photos,
+        private PaymentService $payments,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -22,7 +29,12 @@ class ShopController extends Controller
         $shops = Shop::query()
             ->with('user')
             ->where(function ($query) use ($viewerId) {
-                $query->where('visible', true)->orWhere('user_id', $viewerId);
+                $query->where('user_id', $viewerId)
+                    ->orWhere(function ($listed) {
+                        $listed->where('visible', true)
+                            ->whereNotNull('listing_paid_until')
+                            ->where('listing_paid_until', '>', now());
+                    });
             })
             ->orderBy('name')
             ->limit(500)
@@ -36,7 +48,7 @@ class ShopController extends Controller
     public function me(Request $request): JsonResponse
     {
         $shop = Shop::query()
-            ->with('user')
+            ->with(['user', 'listingPayment'])
             ->where('user_id', $request->user()->id)
             ->first();
 
@@ -44,22 +56,34 @@ class ShopController extends Controller
             abort(404, 'Você ainda não cadastrou uma loja.');
         }
 
+        $this->refreshListingPayment($shop);
+
         return response()->json([
             'shop' => new ShopResource($shop),
+            'payment' => $shop->isOwner($request->user()) && $shop->listingPayment
+                ? new PaymentResource($shop->listingPayment)
+                : null,
         ]);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $shop = Shop::query()->with('user')->findOrFail($id);
-        $isOwner = (int) $shop->user_id === (int) $request->user()->id;
+        $shop = Shop::query()->with(['user', 'listingPayment'])->findOrFail($id);
+        $isOwner = $shop->isOwner($request->user());
 
-        if (! ($shop->visible ?? true) && ! $isOwner) {
+        if (! $shop->isListedPublicly() && ! $isOwner) {
             abort(404, 'Esta loja está oculta.');
+        }
+
+        if ($isOwner) {
+            $this->refreshListingPayment($shop);
         }
 
         return response()->json([
             'shop' => new ShopResource($shop),
+            'payment' => $isOwner && $shop->listingPayment
+                ? new PaymentResource($shop->listingPayment)
+                : null,
         ]);
     }
 
@@ -78,7 +102,7 @@ class ShopController extends Controller
             $existing->fill($data);
             $existing->save();
             $this->storeLogo($request, $existing);
-            $existing->load('user');
+            $existing->load(['user', 'listingPayment']);
 
             return response()->json([
                 'shop' => new ShopResource($existing),
@@ -96,7 +120,7 @@ class ShopController extends Controller
             'user_id' => $request->user()->id,
         ]);
         $this->storeLogo($request, $shop);
-        $shop->load('user');
+        $shop->load(['user', 'listingPayment']);
 
         return response()->json([
             'shop' => new ShopResource($shop),
@@ -107,25 +131,69 @@ class ShopController extends Controller
     {
         $shop = Shop::query()->findOrFail($id);
 
-        if ((int) $shop->user_id !== (int) $request->user()->id) {
+        if (! $shop->isOwner($request->user())) {
             abort(403, 'Esta loja pertence a outro usuário.');
         }
 
         $shop->fill($this->mapPayload($request->validated()));
         $shop->save();
         $this->storeLogo($request, $shop);
-        $shop->load('user');
+        $shop->load(['user', 'listingPayment']);
 
         return response()->json([
             'shop' => new ShopResource($shop),
         ]);
     }
 
+    public function listing(StoreShopListingRequest $request, string $id): JsonResponse
+    {
+        $shop = Shop::query()->with(['user', 'listingPayment'])->findOrFail($id);
+
+        if (! $shop->isOwner($request->user())) {
+            abort(403, 'Só quem cadastrou a loja pode pagar a anuidade.');
+        }
+
+        $this->refreshListingPayment($shop);
+
+        $open = $shop->listingPayment;
+        if ($open && $open->isPending()) {
+            return response()->json([
+                'shop' => new ShopResource($shop),
+                'payment' => new PaymentResource($open),
+            ]);
+        }
+
+        $data = $request->validated();
+
+        try {
+            $payment = $this->payments->create($request->user(), [
+                'amount' => Shop::LISTING_PRICE_CENTS / 100,
+                'paymentMethod' => 'pix',
+                'description' => Shop::listingDescription($shop->name),
+                'payerName' => $data['payerName'] ?? null,
+                'payerCpf' => $data['payerCpf'] ?? null,
+            ]);
+        } catch (HebronPayException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->status >= 400 && $e->status < 600 ? $e->status : 502);
+        }
+
+        $shop->forceFill(['listing_payment_id' => $payment->id])->save();
+        Shop::activatePaid($payment->fresh() ?? $payment);
+        $shop->refresh()->load(['user', 'listingPayment']);
+
+        return response()->json([
+            'shop' => new ShopResource($shop),
+            'payment' => new PaymentResource($shop->listingPayment ?? $payment),
+        ], 201);
+    }
+
     public function destroy(Request $request, string $id): JsonResponse
     {
         $shop = Shop::query()->findOrFail($id);
 
-        if ((int) $shop->user_id !== (int) $request->user()->id) {
+        if (! $shop->isOwner($request->user())) {
             abort(403, 'Esta loja pertence a outro usuário.');
         }
 
@@ -185,5 +253,20 @@ class ShopController extends Controller
         $this->photos->deleteMany([$shop->logo_url]);
         $shop->logo_url = $this->photos->storeShopLogo($request->file('logo'), $request->user()->id);
         $shop->save();
+    }
+
+    private function refreshListingPayment(Shop $shop): void
+    {
+        $payment = $shop->listingPayment;
+        if (! $payment) {
+            return;
+        }
+
+        if ($payment->isPending()) {
+            $payment = $this->payments->refreshFromProvider($payment);
+        }
+
+        Shop::activatePaid($payment);
+        $shop->refresh()->load(['user', 'listingPayment']);
     }
 }

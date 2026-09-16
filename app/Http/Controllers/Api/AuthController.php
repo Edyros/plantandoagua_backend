@@ -89,6 +89,12 @@ class AuthController extends Controller
             'state' => $data['state'] ?? null,
         ]);
 
+        foreach (['website', 'instagram', 'facebook', 'linkedin'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $user->{$field} = $data[$field];
+            }
+        }
+
         if ($request->hasFile('avatar')) {
             $this->photos->deleteMany([$user->avatar_url]);
             $user->avatar_url = $this->photos->storeAvatar($request->file('avatar'), $user->id);

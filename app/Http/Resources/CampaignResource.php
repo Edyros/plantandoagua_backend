@@ -24,6 +24,10 @@ class CampaignResource extends JsonResource
             'ownerUserId' => $this->user?->uuid ?? (string) $this->user_id,
             'ownerName' => $this->whenLoaded('user', fn () => $this->user?->name),
             'name' => $this->name,
+            'website' => $this->website,
+            'instagram' => $this->instagram,
+            'facebook' => $this->facebook,
+            'linkedin' => $this->linkedin,
             'total' => (int) $this->total,
             'remaining' => (int) $this->remaining,
             'planted' => max(0, (int) $this->total - (int) $this->remaining),
@@ -33,6 +37,7 @@ class CampaignResource extends JsonResource
             'inviteCode' => $showInviteCode ? $this->invite_code : null,
             'paymentId' => $this->payment_id,
             'paymentStatus' => $this->when($isOwner, fn () => $this->payment?->status),
+            'area' => $this->mapArea?->toMapPayload(),
             'userPlanted' => $this->when(
                 $viewer && ! $isOwner,
                 fn () => $this->plantings()->where('user_id', $viewer->id)->count(),

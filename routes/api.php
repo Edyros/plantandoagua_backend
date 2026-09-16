@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\Dev\SimulateHebronPayWebhookController;
@@ -25,6 +26,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/users/{id}', [UserController::class, 'show']);
 
+    Route::get('/areas', [AreaController::class, 'index']);
+    Route::get('/areas/mine', [AreaController::class, 'mine']);
+    Route::post('/areas', [AreaController::class, 'store']);
+    Route::get('/areas/{id}', [AreaController::class, 'show']);
+    Route::post('/areas/{id}', [AreaController::class, 'update']);
+    Route::put('/areas/{id}', [AreaController::class, 'update']);
+    Route::patch('/areas/{id}', [AreaController::class, 'update']);
+    Route::delete('/areas/{id}', [AreaController::class, 'destroy']);
+
     Route::get('/shops', [ShopController::class, 'index']);
     Route::get('/shops/me', [ShopController::class, 'me']);
     Route::post('/shops', [ShopController::class, 'store']);
@@ -32,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/shops/{id}', [ShopController::class, 'update']);
     Route::put('/shops/{id}', [ShopController::class, 'update']);
     Route::patch('/shops/{id}', [ShopController::class, 'update']);
+    Route::post('/shops/{id}/listing', [ShopController::class, 'listing']);
     Route::delete('/shops/{id}', [ShopController::class, 'destroy']);
 
     Route::get('/campaigns', [CampaignController::class, 'index']);
@@ -40,6 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/campaigns', [CampaignController::class, 'store']);
     Route::post('/campaigns/redeem', [CampaignController::class, 'redeem']);
     Route::get('/campaigns/{id}', [CampaignController::class, 'show']);
+    Route::post('/campaigns/{id}', [CampaignController::class, 'update']);
+    Route::put('/campaigns/{id}', [CampaignController::class, 'update']);
+    Route::patch('/campaigns/{id}', [CampaignController::class, 'update']);
     Route::post('/campaigns/{id}/status', [CampaignController::class, 'updateStatus']);
     Route::get('/campaigns/{id}/plantings', [CampaignController::class, 'plantings']);
 

@@ -99,13 +99,19 @@
         <section class="band-dark" id="porque">
             <div class="wrap">
                 <p class="section-kicker">Por que Plantando Água</p>
-                <h2>Árvore no chão é chuva que fica.</h2>
+                <h2>Árvore em pé é chuva que fica.</h2>
                 <p class="section-copy">O nome não é metáfora vazia. Floresta em pé infiltra chuva, recarrega nascente e segura o solo. O app existe para que esse gesto — plantar — deixe rastros que dá para ver, voltar e contar.</p>
                 <div class="metrics">
                     <div class="metric">
-                        <b data-count="{{ $stats['trees'] > 0 ? $stats['trees'] : 1 }}">{{ $stats['trees'] > 0 ? number_format($stats['trees'], 0, ',', '.') : '1' }}</b>
-                        <span>{{ $stats['trees'] > 0 ? 'árvores no mapa' : 'minuto para registrar' }}</span>
+                        <b data-count="{{ ($stats['trees'] > 0 || $stats['adopted'] > 0) ? $stats['trees'] : 1 }}">{{ ($stats['trees'] > 0 || $stats['adopted'] > 0) ? number_format($stats['trees'], 0, ',', '.') : '1' }}</b>
+                        <span>{{ ($stats['trees'] > 0 || $stats['adopted'] > 0) ? 'árvores plantadas' : 'minuto para registrar' }}</span>
                     </div>
+                    @if($stats['trees'] > 0 || $stats['adopted'] > 0)
+                    <div class="metric">
+                        <b data-count="{{ $stats['adopted'] }}">{{ number_format($stats['adopted'], 0, ',', '.') }}</b>
+                        <span>árvores adotadas</span>
+                    </div>
+                    @endif
                     <div class="metric">
                         <b>{{ $stats['species'] > 0 ? number_format($stats['species'], 0, ',', '.') : '5' }}</b>
                         <span>{{ $stats['species'] > 0 ? 'espécies registradas' : 'registros grátis para começar' }}</span>

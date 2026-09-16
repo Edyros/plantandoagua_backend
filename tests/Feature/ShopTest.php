@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -44,6 +45,7 @@ class ShopTest extends TestCase
             ->assertJsonPath('shop.state', 'SP')
             ->assertJsonPath('shop.products.0', 'Mudas nativas')
             ->assertJsonPath('shop.visible', true)
+            ->assertJsonPath('shop.listed', false)
             ->assertJsonMissingPath('shop.price')
             ->assertJsonMissingPath('shop.products.0.price');
 
@@ -110,6 +112,7 @@ class ShopTest extends TestCase
         $shop = Shop::query()->create($this->shopAttrs($owner->id, (string) Str::uuid(), [
             'name' => 'Campo Forte',
             'products' => ['Mudas de ipê'],
+            'listing_paid_until' => now()->addYear(),
         ]));
 
         Sanctum::actingAs($viewer);
@@ -117,7 +120,8 @@ class ShopTest extends TestCase
         $this->getJson('/api/shops')
             ->assertOk()
             ->assertJsonPath('shops.0.id', $shop->id)
-            ->assertJsonPath('shops.0.name', 'Campo Forte');
+            ->assertJsonPath('shops.0.listed', true)
+            ->assertJsonMissingPath('shops.0.price');
 
         $this->getJson('/api/shops/'.$shop->id)
             ->assertOk()
@@ -132,6 +136,7 @@ class ShopTest extends TestCase
         $shop = Shop::query()->create($this->shopAttrs($owner->id, (string) Str::uuid(), [
             'name' => 'Loja reservada',
             'visible' => false,
+            'listing_paid_until' => now()->addYear(),
         ]));
 
         Sanctum::actingAs($viewer);
@@ -177,6 +182,73 @@ class ShopTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_unpaid_shop_stays_off_the_community_map(): void
+    {
+        $owner = $this->makeUser(['email' => 'dona@example.com']);
+        $viewer = $this->makeUser(['email' => 'visita@example.com']);
+        $shop = Shop::query()->create($this->shopAttrs($owner->id, (string) Str::uuid(), [
+            'name' => 'Loja fantasma',
+            'visible' => true,
+        ]));
+
+        Sanctum::actingAs($viewer);
+        $this->getJson('/api/shops')->assertOk()->assertJsonCount(0, 'shops');
+        $this->getJson('/api/shops/'.$shop->id)->assertNotFound();
+
+        Sanctum::actingAs($owner);
+        $this->getJson('/api/shops')
+            ->assertOk()
+            ->assertJsonPath('shops.0.id', $shop->id)
+            ->assertJsonPath('shops.0.listed', false);
+    }
+
+    public function test_owner_can_pay_listing_and_shop_appears_for_a_year(): void
+    {
+        Http::fake([
+            'https://api.hebronpay.com.br/v1/invoices/recipient' => Http::response([
+                'id' => 'inv_shop_year',
+                'status' => 'pending',
+            ], 201),
+        ]);
+
+        $owner = $this->makeUser();
+        $shop = Shop::query()->create($this->shopAttrs($owner->id, (string) Str::uuid(), [
+            'name' => 'Viveiro do Córrego',
+        ]));
+
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/shops/'.$shop->id.'/listing', [
+            'payerName' => 'Mariana Silva',
+            'payerCpf' => '529.982.247-25',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('payment.amountCents', 15000)
+            ->assertJsonPath('shop.listed', false);
+
+        $this->simulatePaidWebhook('inv_shop_year');
+
+        $this->getJson('/api/shops/me')
+            ->assertOk()
+            ->assertJsonPath('shop.listed', true);
+
+        $until = Shop::query()->findOrFail($shop->id)->listing_paid_until;
+        $this->assertNotNull($until);
+        $this->assertTrue($until->gt(now()->addMonths(11)));
+        $this->assertTrue($until->lt(now()->addMonths(13)));
+
+        $viewer = $this->makeUser(['email' => 'visita@example.com']);
+        Sanctum::actingAs($viewer);
+        $this->getJson('/api/shops')
+            ->assertOk()
+            ->assertJsonPath('shops.0.id', $shop->id);
+    }
+
+    public function test_guest_cannot_pay_shop_listing(): void
+    {
+        $this->postJson('/api/shops/'.(string) Str::uuid().'/listing')->assertUnauthorized();
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */
@@ -186,7 +258,36 @@ class ShopTest extends TestCase
             'uuid' => (string) Str::uuid(),
             'name' => 'Mariana Silva',
             'phone' => '11999999999',
+            'cpf' => '529.982.247-25',
         ], $overrides));
+    }
+
+    private function simulatePaidWebhook(string $invoiceId): void
+    {
+        $payload = json_encode([
+            'event' => 'invoice.paid',
+            'data' => [
+                'id' => $invoiceId,
+                'status' => 'paid',
+                'paidAt' => '2026-09-02T12:00:00Z',
+            ],
+        ], JSON_THROW_ON_ERROR);
+
+        $signature = hash_hmac('sha256', $payload, 'test-webhook-secret');
+
+        $this->call(
+            'POST',
+            '/api/webhooks/hebronpay',
+            [],
+            [],
+            [],
+            [
+                'HTTP_ACCEPT' => 'application/json',
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_SIGNATURE' => $signature,
+            ],
+            $payload,
+        )->assertOk();
     }
 
     /**

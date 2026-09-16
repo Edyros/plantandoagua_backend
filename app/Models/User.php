@@ -29,9 +29,14 @@ class User extends Authenticatable
         'cpf',
         'city',
         'state',
+        'website',
+        'instagram',
+        'facebook',
+        'linkedin',
         'avatar_url',
         'eco_points',
         'trees_planted',
+        'trees_adopted',
         'profile_complete',
         'appear_on_community_map',
         'public_profile',
@@ -71,6 +76,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'eco_points' => 'integer',
             'trees_planted' => 'integer',
+            'trees_adopted' => 'integer',
             'profile_complete' => 'integer',
             'appear_on_community_map' => 'boolean',
             'public_profile' => 'boolean',
@@ -97,6 +103,31 @@ class User extends Authenticatable
     public function plantings(): HasMany
     {
         return $this->hasMany(Planting::class);
+    }
+
+    /**
+     * @return array{planted: int, adopted: int}
+     */
+    public function treeCounts(): array
+    {
+        $row = $this->plantings()
+            ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'adopted' THEN quantity ELSE 0 END), 0) as adopted")
+            ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'adopted' THEN 0 ELSE quantity END), 0) as planted")
+            ->first();
+
+        return [
+            'planted' => (int) ($row->planted ?? 0),
+            'adopted' => (int) ($row->adopted ?? 0),
+        ];
+    }
+
+    public function refreshTreesCounts(): void
+    {
+        $counts = $this->treeCounts();
+        $this->forceFill([
+            'trees_planted' => $counts['planted'],
+            'trees_adopted' => $counts['adopted'],
+        ])->save();
     }
 
     public function shop(): HasOne

@@ -51,4 +51,49 @@ class UpdateProfileTest extends TestCase
             'state' => 'PR',
         ]);
     }
+
+    public function test_user_can_save_cnpj_and_social_links(): void
+    {
+        $user = User::factory()->create([
+            'uuid' => (string) Str::uuid(),
+            'name' => 'Prefeitura Verde',
+            'phone' => '11999999999',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/user', [
+            'name' => 'Prefeitura Verde',
+            'phone' => '(11) 98888-7777',
+            'cpf' => '11.444.777/0001-61',
+            'website' => 'prefeituraverde.sp.gov.br',
+            'instagram' => '@prefeituraverde',
+            'facebook' => 'https://facebook.com/prefeituraverde',
+            'linkedin' => 'https://www.linkedin.com/company/prefeituraverde',
+        ])
+            ->assertOk()
+            ->assertJsonPath('user.cpf', '11.444.777/0001-61')
+            ->assertJsonPath('user.website', 'https://prefeituraverde.sp.gov.br')
+            ->assertJsonPath('user.instagram', '@prefeituraverde')
+            ->assertJsonPath('user.facebook', 'https://facebook.com/prefeituraverde')
+            ->assertJsonPath('user.linkedin', 'https://www.linkedin.com/company/prefeituraverde');
+    }
+
+    public function test_invalid_document_is_rejected(): void
+    {
+        $user = User::factory()->create([
+            'uuid' => (string) Str::uuid(),
+            'phone' => '11999999999',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->putJson('/api/user', [
+            'name' => 'Ana Souza',
+            'phone' => '(11) 98888-7777',
+            'cpf' => '11.444.777/0001-00',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['cpf']);
+    }
 }

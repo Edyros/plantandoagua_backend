@@ -57,6 +57,7 @@ class PlantingSeeder extends Seeder
                 'state' => $place['state'],
                 'eco_points' => 0,
                 'trees_planted' => 0,
+                'trees_adopted' => 0,
                 'profile_complete' => $faker->numberBetween(40, 100),
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -96,18 +97,20 @@ class PlantingSeeder extends Seeder
             $userId = $userIds[$index];
             $place = $userCities[$index];
             $count = $plantingCounts[$index];
-            $treesByUser[$userId] = 0;
+            $treesByUser[$userId] = ['planted' => 0, 'adopted' => 0];
 
             for ($n = 0; $n < $count; $n++) {
                 $tree = $species[array_rand($species)];
                 $quantity = random_int(1, 12);
-                $treesByUser[$userId] += $quantity;
+                $kind = random_int(1, 100) <= 22 ? 'adopted' : 'planted';
+                $treesByUser[$userId][$kind] += $quantity;
                 $hasSupplier = random_int(1, 100) <= 65;
                 $supplier = $hasSupplier ? $suppliers[array_rand($suppliers)] : null;
 
                 $plantings[] = [
                     'id' => (string) Str::uuid(),
                     'user_id' => $userId,
+                    'kind' => $kind,
                     'species' => $tree['name'],
                     'scientific_name' => $tree['scientific'],
                     'quantity' => $quantity,
@@ -136,11 +139,12 @@ class PlantingSeeder extends Seeder
         $this->command?->info('Atualizando eco points e total de árvores...');
 
         $userUpdates = [];
-        foreach ($treesByUser as $userId => $total) {
+        foreach ($treesByUser as $userId => $totals) {
             $userUpdates[] = [
                 'id' => $userId,
-                'trees_planted' => $total,
-                'eco_points' => $total * 12,
+                'trees_planted' => $totals['planted'],
+                'trees_adopted' => $totals['adopted'],
+                'eco_points' => ($totals['planted'] + $totals['adopted']) * 12,
             ];
         }
 
@@ -150,6 +154,7 @@ class PlantingSeeder extends Seeder
                     ->where('id', $row['id'])
                     ->update([
                         'trees_planted' => $row['trees_planted'],
+                        'trees_adopted' => $row['trees_adopted'],
                         'eco_points' => $row['eco_points'],
                         'updated_at' => $now,
                     ]);

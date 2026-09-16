@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Exceptions\HebronPayException;
 use App\Http\Requests\Campaign\RedeemCampaignRequest;
 use App\Http\Requests\Campaign\StoreCampaignRequest;
+use App\Http\Requests\Campaign\UpdateCampaignRequest;
 use App\Http\Requests\Campaign\UpdateCampaignStatusRequest;
 use App\Http\Resources\CampaignResource;
 use App\Http\Resources\PaymentResource;
 use App\Http\Resources\PlantingResource;
+use App\Models\Area;
 use App\Models\Campaign;
 use App\Models\User;
 use App\Services\PaymentService;
@@ -96,14 +98,30 @@ class CampaignController extends Controller
             ], $e->status >= 400 && $e->status < 600 ? $e->status : 502);
         }
 
+        $mapArea = null;
+        if (isset($data['area']['vertices'])) {
+            $mapArea = Area::query()->create([
+                'id' => Area::newId(),
+                'user_id' => $request->user()->id,
+                'kind' => Area::KIND_CAMPAIGN,
+                'name' => $name,
+                'vertices' => Area::normalizedVertices($data['area']['vertices']),
+            ]);
+        }
+
         $campaign = Campaign::query()->create([
             'id' => Campaign::newId(),
             'user_id' => $request->user()->id,
             'name' => $name,
+            'website' => $data['website'] ?? null,
+            'instagram' => $data['instagram'] ?? null,
+            'facebook' => $data['facebook'] ?? null,
+            'linkedin' => $data['linkedin'] ?? null,
             'total' => $quantity,
             'remaining' => $quantity,
             'visibility' => $data['visibility'],
             'per_user_limit' => isset($data['perUserLimit']) ? (int) $data['perUserLimit'] : null,
+            'area_id' => $mapArea?->id,
             'status' => Campaign::STATUS_PENDING_PAYMENT,
             'payment_id' => $payment->id,
         ]);
@@ -137,6 +155,35 @@ class CampaignController extends Controller
         return response()->json([
             'campaign' => new CampaignResource($campaign),
             'payment' => $campaign->isOwner($request->user()) && $campaign->payment
+                ? new PaymentResource($campaign->payment)
+                : null,
+        ]);
+    }
+
+    public function update(UpdateCampaignRequest $request, string $id): JsonResponse
+    {
+        $campaign = Campaign::query()->with(['user', 'payment', 'mapArea'])->findOrFail($id);
+
+        if (! $campaign->isOwner($request->user())) {
+            abort(403, 'Só quem criou a campanha pode alterar.');
+        }
+
+        $data = $request->validated();
+        if (isset($data['name'])) {
+            $campaign->forceFill(['name' => $data['name']])->save();
+        }
+
+        if (array_key_exists('area', $data)) {
+            $this->syncCampaignArea($campaign, $request->user(), $data['area'] ?? null);
+        } elseif ($campaign->mapArea) {
+            $campaign->mapArea->forceFill(['name' => $campaign->name])->save();
+        }
+
+        $campaign->refresh()->load(['user', 'payment', 'mapArea']);
+
+        return response()->json([
+            'campaign' => new CampaignResource($campaign),
+            'payment' => $campaign->payment
                 ? new PaymentResource($campaign->payment)
                 : null,
         ]);
@@ -219,6 +266,40 @@ class CampaignController extends Controller
                 ? new PaymentResource($campaign->payment)
                 : null,
         ]);
+    }
+
+    /**
+     * @param  array{vertices?: list<array{latitude?: mixed, longitude?: mixed}>}|null  $area
+     */
+    private function syncCampaignArea(Campaign $campaign, User $user, ?array $area): void
+    {
+        $current = $campaign->mapArea;
+
+        if ($area === null || ! isset($area['vertices']) || ! is_array($area['vertices'])) {
+            $campaign->forceFill(['area_id' => null])->save();
+            $current?->delete();
+
+            return;
+        }
+
+        $payload = [
+            'name' => $campaign->name,
+            'vertices' => Area::normalizedVertices($area['vertices']),
+        ];
+
+        if ($current) {
+            $current->forceFill($payload)->save();
+
+            return;
+        }
+
+        $mapArea = Area::query()->create([
+            'id' => Area::newId(),
+            'user_id' => $user->id,
+            'kind' => Area::KIND_CAMPAIGN,
+            ...$payload,
+        ]);
+        $campaign->forceFill(['area_id' => $mapArea->id])->save();
     }
 
     private function pauseCampaign(Campaign $campaign): void

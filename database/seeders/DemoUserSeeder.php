@@ -22,6 +22,7 @@ class DemoUserSeeder extends Seeder
                 'state' => 'SP',
                 'eco_points' => 1560,
                 'trees_planted' => 128,
+                'trees_adopted' => 12,
                 'profile_complete' => 80,
             ],
         );

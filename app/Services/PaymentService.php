@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Exceptions\HebronPayException;
 use App\Models\Campaign;
 use App\Models\Payment;
+use App\Models\Shop;
 use App\Models\User;
+use App\Support\BrazilianDocument;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -182,6 +184,7 @@ class PaymentService
         ])->save();
 
         Campaign::activatePaid($payment->fresh() ?? $payment);
+        Shop::activatePaid($payment->fresh() ?? $payment);
     }
 
     /**
@@ -264,40 +267,15 @@ class PaymentService
      */
     private function payerDocument(User $user, array $input): string
     {
-        $document = preg_replace('/\D+/', '', (string) ($input['payerCpf'] ?? $user->cpf)) ?: '';
-
-        if (strlen($document) === 14) {
-            throw new HebronPayException('Use um CPF de 11 dígitos no pagador.', 422);
-        }
-
-        if (strlen($document) !== 11 || ! $this->isValidCpf($document)) {
+        $raw = (string) ($input['payerCpf'] ?? $user->cpf);
+        if (! BrazilianDocument::isValid($raw)) {
             throw new HebronPayException(
-                'CPF inválido. A HebronPay rejeita números sem dígitos verificadores corretos.',
+                'CPF ou CNPJ inválido. A HebronPay rejeita números sem dígitos verificadores corretos.',
                 422,
             );
         }
 
-        return $document;
-    }
-
-    private function isValidCpf(string $digits): bool
-    {
-        if (strlen($digits) !== 11 || preg_match('/^(\d)\1{10}$/', $digits)) {
-            return false;
-        }
-
-        for ($position = 9; $position < 11; $position++) {
-            $sum = 0;
-            for ($i = 0; $i < $position; $i++) {
-                $sum += (int) $digits[$i] * (($position + 1) - $i);
-            }
-            $check = ((10 * $sum) % 11) % 10;
-            if ((int) $digits[$position] !== $check) {
-                return false;
-            }
-        }
-
-        return true;
+        return BrazilianDocument::digits($raw);
     }
 
     private function publicWebhookUrl(): ?string

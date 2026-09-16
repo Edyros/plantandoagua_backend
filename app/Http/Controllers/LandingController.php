@@ -20,12 +20,13 @@ class LandingController extends Controller
     }
 
     /**
-     * @return array{trees: int, plantings: int, shops: int, cities: int, species: int}
+     * @return array{trees: int, adopted: int, plantings: int, shops: int, cities: int, species: int}
      */
     private function communityStats(): array
     {
         $empty = [
             'trees' => 0,
+            'adopted' => 0,
             'plantings' => 0,
             'shops' => 0,
             'cities' => 0,
@@ -37,8 +38,21 @@ class LandingController extends Controller
                 return $empty;
             }
 
+            $hasKind = Schema::hasColumn('plantings', 'kind');
+            $treeCounts = $hasKind
+                ? Planting::query()
+                    ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'adopted' THEN quantity ELSE 0 END), 0) as adopted")
+                    ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'adopted' THEN 0 ELSE quantity END), 0) as planted")
+                    ->first()
+                : null;
+
             return [
-                'trees' => (int) Planting::query()->sum('quantity'),
+                'trees' => $hasKind
+                    ? (int) ($treeCounts->planted ?? 0)
+                    : (int) Planting::query()->sum('quantity'),
+                'adopted' => $hasKind
+                    ? (int) ($treeCounts->adopted ?? 0)
+                    : 0,
                 'plantings' => Planting::query()->count(),
                 'shops' => Schema::hasTable('shops')
                     ? Shop::query()->where('visible', true)->count()

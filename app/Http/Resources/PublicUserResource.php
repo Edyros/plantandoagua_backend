@@ -20,9 +20,14 @@ class PublicUserResource extends JsonResource
             'name' => $this->name,
             'city' => $showCity ? $this->city : null,
             'state' => $showCity ? $this->state : null,
+            'website' => $this->website,
+            'instagram' => $this->instagram,
+            'facebook' => $this->facebook,
+            'linkedin' => $this->linkedin,
             'avatarUri' => app(PlantingPhotoService::class)->publicUrl($this->avatar_url),
             'ecoPoints' => (int) $this->eco_points,
             'treesPlanted' => (int) $this->trees_planted,
+            'treesAdopted' => (int) $this->trees_adopted,
             'createdAt' => $this->created_at?->toISOString(),
         ];
     }

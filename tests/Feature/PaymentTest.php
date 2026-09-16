@@ -150,7 +150,7 @@ class PaymentTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath(
                 'message',
-                'CPF inválido. A HebronPay rejeita números sem dígitos verificadores corretos.',
+                'CPF ou CNPJ inválido. A HebronPay rejeita números sem dígitos verificadores corretos.',
             );
     }
 

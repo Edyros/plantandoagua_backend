@@ -212,7 +212,7 @@ h2 { font-family: Fraunces, serif; font-size: clamp(2rem, 3.4vw, 3.1rem); margin
 .band-dark .section-copy { color: rgba(255,255,255,.72); }
 
 .metrics {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 36px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 36px;
 }
 .metric {
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);

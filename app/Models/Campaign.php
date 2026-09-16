@@ -30,10 +30,21 @@ class Campaign extends Model
     /**
      * @var list<string>
      */
+    protected $with = [
+        'mapArea',
+    ];
+
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
         'id',
         'user_id',
         'name',
+        'website',
+        'instagram',
+        'facebook',
+        'linkedin',
         'total',
         'remaining',
         'visibility',
@@ -41,6 +52,7 @@ class Campaign extends Model
         'status',
         'payment_id',
         'per_user_limit',
+        'area_id',
     ];
 
     /**
@@ -58,6 +70,11 @@ class Campaign extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function mapArea(): BelongsTo
+    {
+        return $this->belongsTo(Area::class, 'area_id');
     }
 
     public function payment(): BelongsTo
