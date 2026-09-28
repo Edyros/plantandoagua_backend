@@ -213,7 +213,7 @@
                     <article class="tile">
                         <div class="ico">🏪</div>
                         <h3>Lojas de mudas</h3>
-                        <p>Encontre viveiro perto de você. Se você vende, cadastre a loja no mesmo mapa.</p>
+                        <p>Encontre viveiro perto de você. Quem vende paga R$&nbsp;{{ number_format($listingPrice, 0, ',', '.') }} e fica 1 ano no mapa — sem loja fantasma.</p>
                     </article>
                 </div>
             </div>
@@ -235,10 +235,11 @@
                 <article class="panel">
                     <p class="section-kicker">Para quem vende</p>
                     <h3>O viveiro entra no mapa.</h3>
-                    <p class="section-copy">Mudas, jardinagem, adubo, ferramentas, irrigação. A loja aparece para quem está prestes a plantar — no mesmo app do registro.</p>
+                    <p class="section-copy">Mudas, jardinagem, adubo, ferramentas, irrigação. A loja aparece para quem está prestes a plantar — no mesmo app do registro. A anuidade de R$&nbsp;{{ number_format($listingPrice, 0, ',', '.') }} libera 1 ano e evita spam.</p>
                     <div class="badges">
                         <div class="badge"><b>Perto de mim</b><span>Quem planta acha quem vende</span></div>
                         <div class="badge"><b>Sua vitrine</b><span>Produtos, cidade e contato</span></div>
+                        <div class="badge"><b>R$ {{ number_format($listingPrice, 0, ',', '.') }} / ano</b><span>Paga no Pix. 1 ano no mapa, sem loja fantasma</span></div>
                     </div>
                 </article>
             </div>
@@ -291,7 +292,7 @@
                     <article>
                         <div class="ico">🏡</div>
                         <h3>Viveiro e loja de mudas</h3>
-                        <p>Apareça para quem está com a cova aberta. Cadastre a loja e os produtos no mapa.</p>
+                        <p>Apareça para quem está com a cova aberta. Cadastre a loja e pague R$&nbsp;{{ number_format($listingPrice, 0, ',', '.') }} por 1 ano no mapa.</p>
                     </article>
                 </div>
             </div>
@@ -312,7 +313,7 @@
                     </details>
                     <details>
                         <summary>É grátis?</summary>
-                        <p>Criar conta é grátis. Os 5 primeiros registros de plantio não têm custo. Depois, cada liberação custa R$ 5, paga no app via Pix.</p>
+                        <p>Criar conta é grátis. Os 5 primeiros registros de plantio não têm custo. Depois, cada liberação custa R$ 5, paga no app via Pix. Loja no mapa é outra coisa: a empresa paga R$&nbsp;{{ number_format($listingPrice, 0, ',', '.') }} por 1 ano.</p>
                     </details>
                     <details>
                         <summary>Como o app prova que a árvore foi plantada?</summary>
@@ -320,7 +321,7 @@
                     </details>
                     <details>
                         <summary>Consigo cadastrar um viveiro?</summary>
-                        <p>Sim. Em Lojas você encontra parceiros ou cadastra a sua, com cidade, contato e o que vende: mudas, adubo, ferramentas, irrigação.</p>
+                        <p>Sim. Em Lojas você cadastra a sua, com cidade, contato e o que vende. Para aparecer no mapa da comunidade, a empresa paga R$&nbsp;{{ number_format($listingPrice, 0, ',', '.') }} no Pix e fica 1 ano liberada. Assim evitamos spam e lojas fantasmas.</p>
                     </details>
                 </div>
             </div>
@@ -364,7 +365,7 @@
             home: ['Aqui é o Início', 'Seu impacto, a meta do mês e quantos registros ainda restam. O atalho verde abre um plantio novo.'],
             map: ['O mapa da comunidade', 'Cada árvore vira um ponto. Filtre os seus plantios, a comunidade ou as lojas parceiras.'],
             plant: ['Plantar leva 1 minuto', 'Espécie, foto e GPS na hora do plantio. Assim a árvore entra no mapa com prova de campo.'],
-            shops: ['Lojas de mudas', 'Encontre parceiros perto de você. Se você vende mudas, dá para cadastrar a sua loja no mapa.'],
+            shops: ['Lojas de mudas', 'Encontre parceiros perto de você. Quem vende paga R$ {{ number_format($listingPrice, 0, ",", ".") }} por 1 ano para aparecer no mapa.'],
             profile: ['Seu perfil', 'Complete cidade e foto, leia o QR de uma árvore, veja medalhas e ajuste o app.'],
         };
         let current = 0;

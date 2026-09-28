@@ -271,6 +271,7 @@ h2 { font-family: Fraunces, serif; font-size: clamp(2rem, 3.4vw, 3.1rem); margin
 .badge { background: var(--mist); border-radius: 16px; padding: 14px; }
 .badge b { display: block; font-size: 13px; }
 .badge span { font-size: 12px; color: var(--muted); }
+.badges .badge:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .who { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 32px; }
 .who article { background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 24px; }

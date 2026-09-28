@@ -15,6 +15,7 @@ class LandingController extends Controller
         return view('landing', [
             'playStoreUrl' => (string) config('store.play'),
             'appStoreUrl' => (string) config('store.apple'),
+            'listingPrice' => (int) (Shop::LISTING_PRICE_CENTS / 100),
             'stats' => $this->communityStats(),
         ]);
     }
@@ -54,14 +55,28 @@ class LandingController extends Controller
                     ? (int) ($treeCounts->adopted ?? 0)
                     : 0,
                 'plantings' => Planting::query()->count(),
-                'shops' => Schema::hasTable('shops')
-                    ? Shop::query()->where('visible', true)->count()
-                    : 0,
+                'shops' => $this->listedShopCount(),
                 'cities' => (int) Planting::query()->whereNotNull('city')->where('city', '!=', '')->distinct()->count('city'),
                 'species' => (int) Planting::query()->whereNotNull('species')->where('species', '!=', '')->distinct()->count('species'),
             ];
         } catch (Throwable) {
             return $empty;
         }
+    }
+
+    private function listedShopCount(): int
+    {
+        if (! Schema::hasTable('shops')) {
+            return 0;
+        }
+
+        $query = Shop::query()->where('visible', true);
+
+        if (Schema::hasColumn('shops', 'listing_paid_until')) {
+            $query->whereNotNull('listing_paid_until')
+                ->where('listing_paid_until', '>', now());
+        }
+
+        return $query->count();
     }
 }
