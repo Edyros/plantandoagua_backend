@@ -243,7 +243,8 @@
         if (!scroller) return;
         var card = scroller.querySelector(".card");
         if (!card) return;
-        var distance = card.getBoundingClientRect().width + 16;
+        var gap = parseFloat(getComputedStyle(scroller).columnGap) || 0;
+        var distance = card.getBoundingClientRect().width + gap;
         scroller.scrollBy({ left: distance * direction, behavior: reduce ? "auto" : "smooth" });
     }
 
