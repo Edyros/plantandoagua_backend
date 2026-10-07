@@ -8,12 +8,17 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
+$landingMiddleware = [
+    EncryptCookies::class,
+    AddQueuedCookiesToResponse::class,
+    StartSession::class,
+    ShareErrorsFromSession::class,
+    ValidateCsrfToken::class,
+];
+
 Route::get('/', LandingController::class)
     ->name('landing')
-    ->withoutMiddleware([
-        EncryptCookies::class,
-        AddQueuedCookiesToResponse::class,
-        StartSession::class,
-        ShareErrorsFromSession::class,
-        ValidateCsrfToken::class,
-    ]);
+    ->withoutMiddleware($landingMiddleware);
+
+Route::redirect('/index-novo', '/', 301)
+    ->withoutMiddleware($landingMiddleware);
